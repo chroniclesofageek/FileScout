@@ -5,6 +5,7 @@
     <string name="hello_world">Hello world!</string>
     <string name="menu_settings">Settings</string>
     <string name="about_me">About Me</string>
+    <string name="search">Search</string>
     
 
 </resources>

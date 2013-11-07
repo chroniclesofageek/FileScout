@@ -15,7 +15,8 @@
         android:theme="@style/AppTheme" >
         <activity
             android:name="com.filemanager.filescout.MainActivity"
-            android:label="@string/app_name" >
+            android:label="@string/app_name" 
+            android:theme="@android:color/black">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -25,7 +26,9 @@
         
         <activity
             android:name="com.filemanager.filescout.ListingActivity"
-            android:label="@string/app_name" >
+            android:label="@string/app_name" 
+            android:theme="@android:color/black"
+            android:parentActivityName="com.filemanager.filescout.MainActivity">
             <intent-filter>
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>

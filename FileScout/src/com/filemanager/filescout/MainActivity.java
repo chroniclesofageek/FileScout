@@ -1,21 +1,30 @@
 package com.filemanager.filescout;
 
 import java.io.File;
-import java.net.MalformedURLException;
 import java.util.ArrayList;
 
+import android.annotation.SuppressLint;
+import android.app.ActionBar;
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
+import android.view.ContextMenu;
+import android.view.ContextMenu.ContextMenuInfo;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 import android.webkit.MimeTypeMap;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
+import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.TextView;
+import android.widget.TextView.OnEditorActionListener;
 import android.widget.Toast;
 
 public class MainActivity extends Activity 
@@ -32,6 +41,9 @@ public class MainActivity extends Activity
         
         //Populate the listview
         final ListView listview = (ListView) findViewById(R.id.listView1);
+        
+        //Register for ContextMenu
+        registerForContextMenu(listview);
         
         //Get list of files in internal storage
         String[] ArrayOfFileNames = Environment.getExternalStorageDirectory().list();
@@ -96,19 +108,49 @@ public class MainActivity extends Activity
         }); 
     }
 
+    //For creation of settings menu
     @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
+    public boolean onCreateOptionsMenu(Menu menu) 
+    {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.activity_main, menu);
         return true;
     }
     
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
+    //When option in settings menu is selected
+    @SuppressLint("NewApi") @Override
+    public boolean onOptionsItemSelected(MenuItem item) 
+    {
     	
     	switch(item.getItemId())
     	{
-    	case R.id.menu_settings:
+    		//When the search option is selected
+    		case R.id.search:
+    		final ActionBar myActionbar = getActionBar();
+    		myActionbar.setCustomView(R.layout.actionbar_search);
+    		
+    		//Add a listener to the done button of search bar
+    		final EditText search = (EditText) myActionbar.getCustomView().findViewById(R.id.searchfield);
+    	    search.setOnEditorActionListener(new OnEditorActionListener() 
+    	    {
+	    	      @Override
+	    	      public boolean onEditorAction(TextView v, int actionId,KeyEvent event)
+	    	      {
+	    	    	  Toast.makeText(MainActivity.this, "Search triggered",Toast.LENGTH_LONG).show();
+	    	    	  //Hide Keyboard and reset actionbar
+	    	    	  InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
+	    	    	  imm.hideSoftInputFromWindow(search.getWindowToken(), 0);
+	    	    	  
+	    	    	  myActionbar.setCustomView(null);
+	    	    	  return false;
+	    	      }
+    	    });
+    	    
+    		myActionbar.setDisplayOptions(ActionBar.DISPLAY_SHOW_CUSTOM | ActionBar.DISPLAY_SHOW_HOME);
+    		return true;
+    		
+    		//When about me option is selected by the user
+    		case R.id.menu_settings:
     		Intent aboutMeIntent = new Intent(getApplicationContext(),AboutMeActivity.class);
     		startActivity(aboutMeIntent);
     		return true;
@@ -116,7 +158,12 @@ public class MainActivity extends Activity
     		default:
     		return super.onOptionsItemSelected(item);
     	}
-    	
-    	
+    }
+    
+    @Override
+    public void onCreateContextMenu(ContextMenu menu, View v,ContextMenuInfo menuInfo) 
+    {
+    	getMenuInflater().inflate(R.menu.contextmenu, menu);
+    	super.onCreateContextMenu(menu, v, menuInfo);
     }
 }
