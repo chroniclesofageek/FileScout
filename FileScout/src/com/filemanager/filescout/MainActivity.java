@@ -20,6 +20,7 @@ import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.webkit.MimeTypeMap;
 import android.widget.AdapterView;
+import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.EditText;
 import android.widget.ListView;
@@ -29,9 +30,12 @@ import android.widget.Toast;
 
 public class MainActivity extends Activity 
 {
-
+	//List of files
 	final ArrayList<String> listOfFileNames = new ArrayList<String>();
 	final ArrayList<File> listOfFileTypes = new ArrayList<File>();
+	boolean isSearchOptionOn = false;
+	ListView listview = null;
+	SimpleArrayAdapter adapter = null;
 	
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -40,35 +44,16 @@ public class MainActivity extends Activity
         setContentView(R.layout.activity_main);
         
         //Populate the listview
-        final ListView listview = (ListView) findViewById(R.id.listView1);
+        listview = (ListView) findViewById(R.id.listView1);
         
         //Register for ContextMenu
         registerForContextMenu(listview);
         
-        //Get list of files in internal storage
-        String[] ArrayOfFileNames = Environment.getExternalStorageDirectory().list();
-        File[] ArrayOfFileTypes = Environment.getExternalStorageDirectory().listFiles();
-        
-        //Create a list of file types
-        for (int i = 0; i < ArrayOfFileTypes.length; ++i) 
-        {
-        	if(!ArrayOfFileTypes[i].isHidden())
-        	{
-        		listOfFileTypes.add(ArrayOfFileTypes[i]);
-        	}
-        }
-        
-        //Create a list of file names
-        for (int i = 0; i < ArrayOfFileNames.length; ++i) 
-        {
-        	if(!ArrayOfFileTypes[i].isHidden())
-        	{	
-        		listOfFileNames.add(ArrayOfFileNames[i]);
-        	}
-        }
+        //Scan local storage for latest files
+        getLatestFiles();
                         
         //Create own Adapter
-        final SimpleArrayAdapter adapter = new SimpleArrayAdapter(getApplicationContext(),listOfFileNames,listOfFileTypes);
+        adapter = new SimpleArrayAdapter(getApplicationContext(),listOfFileNames,listOfFileTypes);
         listview.setAdapter(adapter);
 
         //OnClick Listener for items on the list
@@ -126,6 +111,7 @@ public class MainActivity extends Activity
     	{
     		//When the search option is selected
     		case R.id.search:
+    		isSearchOptionOn = true;
     		final ActionBar myActionbar = getActionBar();
     		myActionbar.setCustomView(R.layout.actionbar_search);
     		
@@ -165,5 +151,115 @@ public class MainActivity extends Activity
     {
     	getMenuInflater().inflate(R.menu.contextmenu, menu);
     	super.onCreateContextMenu(menu, v, menuInfo);
+    }
+    
+    @Override
+    public boolean onContextItemSelected(MenuItem item) 
+    {
+    	AdapterContextMenuInfo info = (AdapterContextMenuInfo) item.getMenuInfo();
+        int index = info.position;
+        View view = info.targetView;
+        
+    	switch (item.getItemId())
+    	{
+    		case R.id.copy:
+    		return true;
+    		
+    		case R.id.delete:
+    		//getLatestFiles();
+    		File toBeDeleted = listOfFileTypes.get(index);
+    		DeleteRecursive(toBeDeleted);
+    		UpdateList(view,index);
+    		return true;
+    		
+    		case R.id.move:
+    		return true;
+    		
+    		case R.id.rename:
+    		return true;
+    		
+    		case R.id.details:
+    		return true;
+    		
+    		default:
+    		return super.onContextItemSelected(item);
+    	}
+    }
+    //My local media scanner. Scan latest files from local storage
+    public void getLatestFiles()
+    {
+    	//Get list of files in internal storage
+        String[] ArrayOfFileNames = Environment.getExternalStorageDirectory().list();
+        File[] ArrayOfFileTypes = Environment.getExternalStorageDirectory().listFiles();
+        
+        //Create a list of file types
+        for (int i = 0; i < ArrayOfFileTypes.length; ++i) 
+        {
+        	if(!ArrayOfFileTypes[i].isHidden())
+        	{
+        		listOfFileTypes.add(ArrayOfFileTypes[i]);
+        	}
+        }
+        
+        //Create a list of file names
+        for (int i = 0; i < ArrayOfFileNames.length; ++i) 
+        {
+        	if(!ArrayOfFileTypes[i].isHidden())
+        	{	
+        		listOfFileNames.add(ArrayOfFileNames[i]);
+        	}
+        }
+    }
+    
+    @SuppressLint("NewApi") @Override
+    public void onBackPressed() 
+    {
+    	if(isSearchOptionOn)
+    	{
+    		ActionBar myActionBar = getActionBar();
+    		myActionBar.setCustomView(null);
+    		myActionBar.setTitle("File Scout");
+    		isSearchOptionOn = false;
+    	}
+    	else
+    	{
+    		super.onBackPressed();
+    	}
+    }
+    
+    public void DeleteRecursive(File toBeDeleted)
+    {
+    	if (toBeDeleted.isDirectory())
+    	{
+		    for (File child : toBeDeleted.listFiles())
+		    {
+		        DeleteRecursive(child);
+		    }
+    	}
+
+    	boolean isDeleted = toBeDeleted.delete();
+    	
+    	if(isDeleted)
+    	{
+    		Toast.makeText(MainActivity.this, "File Deleted",Toast.LENGTH_SHORT).show();
+    	}
+    	else
+    	{
+    		Toast.makeText(MainActivity.this, "File Not Deleted",Toast.LENGTH_SHORT).show();
+    	}
+    }
+    
+    @SuppressLint("NewApi") public void UpdateList(final View view,final int index)
+    {
+    	view.animate().setDuration(2000).alpha(0).withEndAction(new Runnable() 
+        {
+          @Override
+          public void run() 
+          {
+            listview.removeViewAt(index);
+            adapter.notifyDataSetChanged();
+            view.setAlpha(1);
+          }
+        });
     }
 }
