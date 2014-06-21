@@ -1,45 +1,45 @@
 package com.filemanager.filescout;
 
 import java.io.File;
-import java.net.MalformedURLException;
 import java.util.ArrayList;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
-import android.view.Menu;
 import android.view.View;
 import android.webkit.MimeTypeMap;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ListView;
-import android.widget.Toast;
 
 public class ListingActivity extends Activity 
 {
 
 	final ArrayList<String> listOfFileNames = new ArrayList<String>();
 	final ArrayList<File> listOfFileTypes = new ArrayList<File>();
+	File mParentDirectory;
+	File mGrandParentDirectory;
+	ListView listOfFilesview;
 	
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        getLatestFiles();
         
-        Intent intent = getIntent();
-        String PathOfItem = intent.getStringExtra("PathOfItem");
+        //Populate the list view
+        listOfFilesview = (ListView) findViewById(R.id.lv_listoffiles);
         
-        //Populate the listview
-        final ListView listview = (ListView) findViewById(R.id.listView1);
+        //Create own Adapter
+        final File_Array_Adapter adapter = new File_Array_Adapter(getApplicationContext(),listOfFileNames,listOfFileTypes);
+        listOfFilesview.setAdapter(adapter);
         
-        //Get list of files in Path Sent
-        String[] ArrayOfFileNames = new File(PathOfItem).list();
-        File[] ArrayOfFileTypes = new File(PathOfItem).listFiles();
-        
-        //Create a list of file types
+      /*  //Create a list of file types
         for (int i = 0; i < ArrayOfFileTypes.length; ++i) 
         {
         	if(!ArrayOfFileTypes[i].isHidden())
@@ -58,11 +58,11 @@ public class ListingActivity extends Activity
         }
                         
         //Create own Adapter
-        final SimpleArrayAdapter adapter = new SimpleArrayAdapter(getApplicationContext(),listOfFileNames,listOfFileTypes);
-        listview.setAdapter(adapter);
+        final Directory_Array_Adapter adapter = new Directory_Array_Adapter(getApplicationContext(),listOfFileNames);
+        listview.setAdapter(adapter);*/
 
         //OnClick Listener for items on the list
-        listview.setOnItemClickListener(new OnItemClickListener() 
+        listOfFilesview.setOnItemClickListener(new OnItemClickListener() 
         {
         	  @Override
         	  public void onItemClick(AdapterView<?> parent, View view,int position, long id) 
@@ -89,13 +89,125 @@ public class ListingActivity extends Activity
         		  //If type is a folder
         		  if(listOfFileTypes.get(position).isDirectory())
         		  {
-        			  File file = listOfFileTypes.get(position);
-        			  Intent intent = new Intent(getApplicationContext(),ListingActivity.class);
-        			  intent.putExtra("PathOfItem",file.getPath());
-        			  startActivity(intent);
+        			  	
+        			  	mParentDirectory = listOfFileTypes.get(position);
+        			  	mGrandParentDirectory = mParentDirectory.getParentFile();
         			  
+	        			  //File file = listOfFileTypes.get(position);
+	        			  //Intent intent = new Intent(getApplicationContext(),ListingActivity.class);
+	        			  //intent.putExtra("PathOfItem",file.getPath());
+	        			  //startActivity(intent);
+        			  
+        			  	String[] ArrayOfFileNames = mParentDirectory.list();
+        			  	File[] ArrayOfFileTypes = mParentDirectory.listFiles();
+        			  	
+        			  	//Clearing the file lists
+        		        listOfFileTypes.clear();
+        		        listOfFileNames.clear();
+        			  	
+        			  	 //Create a list of file types
+        		        for (int i = 0; i < ArrayOfFileTypes.length; ++i) 
+        		        {
+        		        	if(!ArrayOfFileTypes[i].isHidden())
+        		        	{
+        		        		listOfFileTypes.add(ArrayOfFileTypes[i]);
+        		        	}
+        		        }
+        		        
+	        			//Create a list of file names
+	    		        for (int i = 0; i < ArrayOfFileNames.length; ++i) 
+	    		        {
+	    		        	if(!ArrayOfFileTypes[i].isHidden())
+	    		        	{	
+	    		        		listOfFileNames.add(ArrayOfFileNames[i]);
+	    		        	}
+	    		        }
+	    		        
+	    		        final File_Array_Adapter adapter = new File_Array_Adapter(getApplicationContext(),listOfFileNames,listOfFileTypes);
+	    		        listOfFilesview.setAdapter(adapter); 
         		  }
         	  }
         }); 
     }
+    
+    //My local media scanner. Scan latest files from local storage
+    public void getLatestFiles()
+    {
+    	//Get list of files in internal storage
+    	mParentDirectory = Environment.getExternalStorageDirectory();
+    	
+        String[] ArrayOfFileNames = Environment.getExternalStorageDirectory().list();
+        File[] ArrayOfFileTypes = Environment.getExternalStorageDirectory().listFiles();
+        
+        //Clearing the file lists
+        listOfFileTypes.clear();
+        listOfFileNames.clear();
+        
+        //Create a list of file types
+        for (int i = 0; i < ArrayOfFileTypes.length; ++i) 
+        {
+        	if(!ArrayOfFileTypes[i].isHidden())
+        	{
+        		listOfFileTypes.add(ArrayOfFileTypes[i]);
+        	}
+        }
+        
+        //Create a list of file names
+        for (int i = 0; i < ArrayOfFileNames.length; ++i) 
+        {
+        	if(!ArrayOfFileTypes[i].isHidden())
+        	{	
+        		listOfFileNames.add(ArrayOfFileNames[i]);
+        	}
+        }
+    }
+    
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) 
+    {
+    	BrowseDirectory(mParentDirectory);
+    	super.onConfigurationChanged(newConfig);
+    }
+    
+    public void BrowseDirectory(File directory)
+
+    {
+    	String[] ArrayOfFileNames = directory.list();
+	  	File[] ArrayOfFileTypes = directory.listFiles();
+	  	
+	  	//Clearing the file lists
+        listOfFileTypes.clear();
+        listOfFileNames.clear();
+	  	
+	  	 //Create a list of file types
+        for (int i = 0; i < ArrayOfFileTypes.length; ++i) 
+        {
+        	if(!ArrayOfFileTypes[i].isHidden())
+        	{
+        		listOfFileTypes.add(ArrayOfFileTypes[i]);
+        	}
+        }
+        
+		//Create a list of file names
+        for (int i = 0; i < ArrayOfFileNames.length; ++i) 
+        {
+        	if(!ArrayOfFileTypes[i].isHidden())
+        	{	
+        		listOfFileNames.add(ArrayOfFileNames[i]);
+        	}
+        }
+        
+        final File_Array_Adapter adapter = new File_Array_Adapter(getApplicationContext(),listOfFileNames,listOfFileTypes);
+        listOfFilesview.setAdapter(adapter); 
+    }
+    
+    @Override
+    public void onBackPressed() 
+    {
+    	BrowseDirectory(mGrandParentDirectory);
+    	mParentDirectory = mGrandParentDirectory;
+    	mGrandParentDirectory = mParentDirectory.getParentFile();
+    	//super.onBackPressed();
+    }
+    
 }
